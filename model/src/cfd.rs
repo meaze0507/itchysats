@@ -38,7 +38,6 @@ use bdk::bitcoin::TxOut;
 use bdk::bitcoin::Txid;
 use bdk::descriptor::Descriptor;
 use bdk::miniscript::DescriptorTrait;
-use cached::proc_macro::cached;
 use itertools::Itertools;
 use maia::generate_payouts;
 use maia::secp256k1_zkp;
@@ -492,33 +491,17 @@ impl EventKind {
     }
 
     pub fn from_json(name: String, data: String) -> Result<Self> {
-        match name.as_str() {
-            Self::CONTRACT_SETUP_COMPLETED_EVENT | Self::ROLLOVER_COMPLETED_EVENT => {
-                from_json_inner_cached(name, data)
-            }
-            _ => from_json_inner(name, data),
-        }
+        use serde_json::json;
+
+        let data = serde_json::from_str::<serde_json::Value>(&data)?;
+
+        let event = serde_json::from_value::<EventKind>(json!({
+            "name": name,
+            "data": data
+        }))?;
+
+        Ok(event)
     }
-}
-
-// Deserialisation of events has been proved to use substantial amount of the CPU.
-// Cache the events.
-#[cached(size = 500, result = true)]
-fn from_json_inner_cached(name: String, data: String) -> Result<EventKind> {
-    from_json_inner(name, data)
-}
-
-fn from_json_inner(name: String, data: String) -> Result<EventKind> {
-    use serde_json::json;
-
-    let data = serde_json::from_str::<serde_json::Value>(&data)?;
-
-    let event = serde_json::from_value::<EventKind>(json!({
-        "name": name,
-        "data": data
-    }))?;
-
-    Ok(event)
 }
 
 /// Models the cfd state of the taker
