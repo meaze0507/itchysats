@@ -38,6 +38,7 @@ pub use maia;
 
 pub mod auto_rollover;
 mod close_cfds;
+mod close_position_taker;
 pub mod collab_settlement_maker;
 pub mod collab_settlement_taker;
 pub mod command;
