@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use futures::StreamExt;
 use model::CfdEvent;
 use model::EventKind;
+use model::OrderId;
 use model::Position;
 use model::Usd;
 use rust_decimal::prelude::FromPrimitive;
@@ -70,6 +71,7 @@ struct UpdateMetrics;
 /// Read-model of the CFD for the position metrics actor.
 #[derive(Clone, Copy)]
 pub struct Cfd {
+    id: OrderId,
     position: Position,
     quantity_usd: Usd,
 
@@ -86,6 +88,7 @@ impl db::CfdAggregate for Cfd {
 
     fn new(_: Self::CtorArgs, cfd: db::Cfd) -> Self {
         Self {
+            id: cfd.id,
             position: cfd.position,
             quantity_usd: cfd.quantity_usd,
             is_open: false,
@@ -202,6 +205,7 @@ impl Cfd {
 impl db::ClosedCfdAggregate for Cfd {
     fn new_closed(_: Self::CtorArgs, closed_cfd: db::ClosedCfd) -> Self {
         let db::ClosedCfd {
+            id,
             position,
             n_contracts,
             ..
@@ -211,6 +215,7 @@ impl db::ClosedCfdAggregate for Cfd {
             Usd::new(Decimal::from_u64(u64::from(n_contracts)).expect("u64 to fit into Decimal"));
 
         Self {
+            id,
             position,
             quantity_usd,
 
@@ -241,6 +246,9 @@ mod metrics {
     const STATUS_CLOSED_LABEL: &str = "closed";
     const STATUS_FAILED_LABEL: &str = "failed";
     const STATUS_REFUNDED_LABEL: &str = "refunded";
+    // this is needed so that we do not lose cfds which are in a weird state, e.g. open & closed.
+    // This should be 0 though but for the time being we add it
+    const STATUS_UNKNOWN_LABEL: &str = "unknown";
 
     static POSITION_QUANTITY_GAUGE: conquer_once::Lazy<prometheus::GaugeVec> =
         conquer_once::Lazy::new(|| {
@@ -269,6 +277,23 @@ mod metrics {
         set_position_metrics(
             cfds.iter().filter(|cfd| cfd.is_refunded),
             STATUS_REFUNDED_LABEL,
+        );
+
+        set_position_metrics(
+            cfds.iter().filter(|cfd| {
+                let unknown_state = !(cfd.is_open ^ cfd.is_closed ^ cfd.is_refunded);
+                if unknown_state {
+                    tracing::error!(
+                        is_open = cfd.is_open,
+                        is_closed = cfd.is_closed,
+                        is_refunded = cfd.is_refunded,
+                        order_id = %cfd.id,
+                        "CFD is in weird state"
+                    );
+                }
+                unknown_state
+            }),
+            STATUS_UNKNOWN_LABEL,
         );
     }
 
