@@ -850,6 +850,7 @@ impl db::ClosedCfdAggregate for Cfd {
             expiry_timestamp,
             lock,
             settlement,
+            creation_timestamp,
         } = closed_cfd;
 
         let quantity_usd =
@@ -942,10 +943,12 @@ impl db::ClosedCfdAggregate for Cfd {
                 .expect("Amount to fit into signed amount"),
         );
 
-        // we don't need the aggregate of the events to know all the
-        // information about a closed CFD. This is why the information
-        // in this struct is not updated
-        let empty_aggregated = Aggregated::new(FeeAccount::new(position, role));
+        // there are no events to apply at this stage for closed CFDs,
+        // which is why this field is mostly ignored
+        let mut aggregated = Aggregated::new(FeeAccount::new(position, role));
+
+        // set the creation_timestamp to be able to sort closed CFDs
+        aggregated.creation_timestamp = creation_timestamp;
 
         Self {
             order_id: id,
@@ -971,7 +974,7 @@ impl db::ClosedCfdAggregate for Cfd {
             expiry_timestamp: Some(expiry_timestamp),
             counterparty: counterparty_network_identity,
             pending_settlement_proposal_price: None,
-            aggregated: empty_aggregated,
+            aggregated,
             network,
         }
     }
