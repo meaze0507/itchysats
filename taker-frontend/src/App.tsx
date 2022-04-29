@@ -18,9 +18,11 @@ import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
 import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
+import { Steps } from "intro.js-react";
+import "intro.js/introjs.css";
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Link as ReachLink } from "react-router-dom";
 import useWebSocket from "react-use-websocket";
 import { useLocalStorage } from "usehooks-ts";
@@ -71,6 +73,8 @@ export const App = () => {
             }
         },
     });
+
+    const navigate = useNavigate();
 
     const [source, isConnected] = useEventSource("/api/feed");
     const walletInfo = useLatestEvent<WalletInfo>(source, "wallet");
@@ -166,8 +170,56 @@ export const App = () => {
 
     const [hideDisclaimer, setHideDisclaimer] = useLocalStorage<boolean>("hideDisclaimer", false);
 
+    // TODO: Users that already used the app should probably not be bothered with the steps...?
+    const [tourEnabled, setTourEnabled] = useState(true);
+    const [tourInitialStep, setTourInitialStep] = useState(0);
+
+    // TODO: Remember that steps were used similar to the disclaimer and set default value accordingly
+    const onExit = () => {
+        setTourEnabled(false);
+    };
+
+    const doTourNavigation = (nextStepIndex: any, nextElement: any) => {
+        switch (nextStepIndex) {
+            case 1:
+                navigate("/wallet");
+                break;
+            case 2:
+                navigate("/");
+                break;
+            default:
+                break;
+        }
+    };
+
+    let tourSteps = [
+        {
+            element: "#wallet-switch-btn",
+            intro: "Initially you will have to fund the wallet. Go to the next step to jump to the wallet.",
+            position: "right",
+        },
+        {
+            element: "#wallet-address",
+            intro: "You can copy the latest wallet address here to fund the wallet.",
+            position: "right",
+        },
+        {
+            element: "#longButton",
+            intro: "Once you have funds you can open position. A long position... blabla",
+            position: "right",
+        },
+    ];
+
     return (
         <>
+            <Steps
+                enabled={tourEnabled}
+                steps={tourSteps}
+                initialStep={tourInitialStep}
+                onExit={onExit}
+                onBeforeChange={doTourNavigation}
+            />
+
             {!hideDisclaimer && <Disclaimer setHideDisclaimer={setHideDisclaimer} />}
             <Nav
                 walletInfo={walletInfo}

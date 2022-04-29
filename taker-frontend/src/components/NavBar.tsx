@@ -139,7 +139,11 @@ export default function Nav({ walletInfo, connectedToMaker, nextFundingEvent, re
                                             const radio = getRadioProps({ value });
                                             return (
                                                 <RadioCard key={value} {...radio}>
-                                                    <HStack>
+                                                    <HStack
+                                                        id={value === "wallet"
+                                                            ? "wallet-switch-btn"
+                                                            : "home-switch-btn"}
+                                                    >
                                                         {value === "wallet"
                                                             ? <FaWallet />
                                                             : <FaHome />}
