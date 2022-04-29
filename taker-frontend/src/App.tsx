@@ -51,6 +51,12 @@ export interface Offer {
     leverage: number;
 }
 
+// TODO: Evaluate moving these globals into the theme to make them accessible through that
+export const VIEWPORT_WIDTH = 1000;
+export const VIEWPORT_WIDTH_PX = VIEWPORT_WIDTH + "px";
+export const BG_LIGHT = "gray.50";
+export const BG_DARK = "gray.800";
+
 export const App = () => {
     const toast = useToast();
 
@@ -169,68 +175,92 @@ export const App = () => {
                 nextFundingEvent={nextFundingEvent}
                 referencePrice={referencePrice}
             />
-            <Box textAlign="center" padding={3} bg={useColorModeValue("gray.50", "gray.800")}>
-                <Center marginTop={20}>
-                    <Routes>
-                        <Route path="/">
-                            <Route
-                                path="wallet"
-                                element={
-                                    <>
-                                        <Wallet walletInfo={walletInfo} />
-                                    </>
-                                }
-                            />
-                            <Route
-                                element={
-                                    // @ts-ignore: ts-lint thinks that {children} is missing but react router is taking care of this for us
-
-
-                                        <PageLayout
-                                            cfds={cfds}
-                                            connectedToMaker={connectedToMaker}
-                                            showPromoBanner={isWithinPromoPeriod}
-                                        />
-
-                                }
+            <Box
+                bg={useColorModeValue("white", "black")}
+                bgGradient={useColorModeValue(
+                    "linear(to-r, white 20%, gray.800, white 80%)",
+                    "linear(to-r, gray.800 20%, white, gray.800 80%)",
+                )}
+            >
+                <Center>
+                    <Box
+                        maxWidth={(VIEWPORT_WIDTH + 400) + "px"}
+                        width={"100%"}
+                        height={"100%"}
+                        bg={useColorModeValue("gray.200", "gray.700")}
+                    >
+                        <Center>
+                            <Box
+                                textAlign="center"
+                                padding={3}
+                                bg={useColorModeValue(BG_LIGHT, BG_DARK)}
+                                maxWidth={VIEWPORT_WIDTH_PX}
+                                width={"100%"}
+                                marginTop={"100px"}
                             >
-                                <Route
-                                    path="long"
-                                    element={
-                                        <>
-                                            <Trade
-                                                offer={longOffer}
-                                                connectedToMaker={connectedToMaker}
-                                                walletBalance={walletInfo ? walletInfo.balance : 0}
-                                                isLong={true}
+                                <Routes>
+                                    <Route path="/">
+                                        <Route
+                                            path="wallet"
+                                            element={
+                                                <>
+                                                    <Wallet walletInfo={walletInfo} />
+                                                </>
+                                            }
+                                        />
+                                        <Route
+                                            element={
+                                                // @ts-ignore: ts-lint thinks that {children} is missing but react router is taking care of this for us
+
+
+                                                    <PageLayout
+                                                        cfds={cfds}
+                                                        connectedToMaker={connectedToMaker}
+                                                        showPromoBanner={isWithinPromoPeriod}
+                                                    />
+
+                                            }
+                                        >
+                                            <Route
+                                                path="long"
+                                                element={
+                                                    <>
+                                                        <Trade
+                                                            offer={longOffer}
+                                                            connectedToMaker={connectedToMaker}
+                                                            walletBalance={walletInfo ? walletInfo.balance : 0}
+                                                            isLong={true}
+                                                        />
+                                                    </>
+                                                }
                                             />
-                                        </>
-                                    }
-                                />
-                                <Route
-                                    path="short"
-                                    element={
-                                        <>
-                                            <Trade
-                                                offer={shortOffer}
-                                                connectedToMaker={connectedToMaker}
-                                                walletBalance={walletInfo ? walletInfo.balance : 0}
-                                                isLong={false}
+                                            <Route
+                                                path="short"
+                                                element={
+                                                    <>
+                                                        <Trade
+                                                            offer={shortOffer}
+                                                            connectedToMaker={connectedToMaker}
+                                                            walletBalance={walletInfo ? walletInfo.balance : 0}
+                                                            isLong={false}
+                                                        />
+                                                    </>
+                                                }
                                             />
-                                        </>
-                                    }
-                                />
-                            </Route>
-                            <Route index element={<Navigate to="long" />} />
-                        </Route>
-                        <Route
-                            path="/*"
-                            element={
-                                <>
-                                </>
-                            }
-                        />
-                    </Routes>
+                                        </Route>
+                                        <Route index element={<Navigate to="long" />} />
+                                    </Route>
+                                    <Route
+                                        path="/*"
+                                        element={
+                                            <>
+                                            </>
+                                        }
+                                    />
+                                </Routes>
+                            </Box>
+                        </Center>
+                    </Box>
                 </Center>
             </Box>
             <Footer />
@@ -273,7 +303,7 @@ function HistoryLayout({ cfds, connectedToMaker }: HistoryLayoutProps) {
 
             {closedPositions.length > 0
                 && (
-                    <Accordion allowToggle width={"80%"}>
+                    <Accordion allowToggle maxWidth={VIEWPORT_WIDTH_PX} width={"100%"}>
                         <AccordionItem>
                             <h2>
                                 <AccordionButton>
